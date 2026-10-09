@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>Lepton</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0a0a'/%3E%3Ctext x='32' y='47' text-anchor='middle' font-family='Georgia,Times New Roman,serif' font-style='italic' font-size='44' fill='white'%3E%26%238467;%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <!-- Canvas -->
+  <div id="viewport" class="viewport" tabindex="0">
+    <div id="world" class="world">
+      <div id="groups" class="groups"></div>
+      <svg id="edges" class="edges" xmlns="http://www.w3.org/2000/svg">
+        <g id="edge-layer"></g>
+        <path id="edge-draft" class="edge draft" d="" />
+      </svg>
+      <div id="nodes" class="nodes"></div>
+    </div>
+    <div id="marquee" class="marquee" hidden></div>
+    <div id="drop-hint" class="drop-hint" hidden><div class="drop-hint-inner">Drop to add to the board</div></div>
+  </div>
+
+  <!-- Top bar -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">ℓ</span>
+      <span class="brand-name">Lepton</span>
+      <span class="brand-sub" id="board-name" spellcheck="false" title="Double-click to rename">Untitled board</span>
+      <span class="proj-dot" id="proj-dot" hidden></span>
+    </div>
+    <div class="topbar-right">
+      <button class="pill" id="status-pill" title="Connection">
+        <span class="dot" id="status-dot"></span>
+        <span id="status-text">Connecting…</span>
+      </button>
+      <button class="icon-btn" id="btn-settings" title="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Dock -->
+  <nav class="dock" id="dock">
+    <button class="dock-btn" data-add="prompt" title="Prompt (P)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M5 6h14M5 12h10M5 18h7"/></svg>
+      <span>Prompt</span>
+    </button>
+    <button class="dock-btn" data-add="image" title="Image (I)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="M20.5 15.5 15.5 11l-7 8"/></svg>
+      <span>Image</span>
+    </button>
+    <button class="dock-btn" data-add="video" title="Video (V)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6" width="12.5" height="12" rx="3"/><path d="M16 10.5 20.5 8v8L16 13.5"/></svg>
+      <span>Video</span>
+    </button>
+    <button class="dock-btn" data-add="llm" title="LLM (L)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>
+      <span>LLM</span>
+    </button>
+    <button class="dock-btn" data-add="batch" title="Prompt batch (B)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h5"/><path d="M9 12c3 0 3-6 6-6h5M9 12c3 0 3 6 6 6h5M9 12h11"/></svg>
+      <span>Prompt batch</span>
+    </button>
+    <button class="dock-btn" data-add="preview" title="Preview (O)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12s3.5-6.5 9.5-6.5S21.5 12 21.5 12s-3.5 6.5-9.5 6.5S2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.6"/></svg>
+      <span>Preview</span>
+    </button>
+    <button class="dock-btn" data-add="compare" title="Compare (C)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="3"/><path d="M12 2.5v19"/><path d="M8.5 10.5 6.5 12l2 1.5M15.5 10.5l2 1.5-2 1.5"/></svg>
+      <span>Compare</span>
+    </button>
+    <span class="dock-sep"></span>
+    <button class="dock-btn" id="btn-upload" title="Upload media (U)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+      <span>Upload</span>
+    </button>
+    <button class="dock-btn" id="btn-projects" title="Projects (⌘O)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.5A2.5 2.5 0 0 1 6 5h4l2 2.5h6a2.5 2.5 0 0 1 2.5 2.5v7A2.5 2.5 0 0 1 18 19.5H6A2.5 2.5 0 0 1 3.5 17z"/></svg>
+      <span>Projects</span>
+    </button>
+    <button class="dock-btn" id="btn-skills" title="Skills (⇧S)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 18A2.5 2.5 0 0 1 6.5 15.5H19"/><path d="M9 7.5h6M9 11h4"/></svg>
+      <span>Skills</span>
+    </button>
+    <button class="dock-btn" id="btn-groups" title="Groups (G)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg>
+      <span>Groups</span>
+    </button>
+    <span class="dock-sep"></span>
+    <button class="dock-btn run" id="btn-run-all" title="Run board (⌘⏎)">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.9l10-6.5a1 1 0 0 0 0-1.7l-10-6.5A1 1 0 0 0 8 5.5z"/></svg>
+      <span>Run</span>
+    </button>
+    <input type="file" id="file-input" multiple accept="image/*,video/*,audio/*" hidden />
+  </nav>
+
+  <!-- Groups sidebar -->
+  <aside class="sidebar" id="groups-panel" hidden>
+    <div class="sidebar-head">
+      <h2>Groups</h2>
+      <button class="icon-btn" id="groups-close" title="Close (Esc)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="sidebar-list" id="groups-list"></div>
+    <p class="hint sidebar-hint">Select nodes and press <kbd>⌘G</kbd> to make a group. Click a group here to jump to it.</p>
+  </aside>
+
+  <!-- Projects sidebar -->
+  <aside class="sidebar" id="projects-panel" hidden>
+    <div class="sidebar-head">
+      <h2>Projects</h2>
+      <button class="icon-btn" id="projects-close" title="Close (Esc)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="sidebar-list" id="projects-list"></div>
+    <p class="hint sidebar-hint">A project is a folder with <code>project.json</code> and a <code>media</code> folder holding every file the board uses. Copy, back up or share the folder freely.</p>
+  </aside>
+
+  <!-- Skills sidebar -->
+  <aside class="sidebar" id="skills-panel" hidden>
+    <div class="sidebar-head">
+      <h2>Skills</h2>
+      <button class="icon-btn" id="skills-close" title="Close (Esc)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="skills-tools" id="skills-tools"></div>
+    <div class="sidebar-list" id="skills-list"></div>
+    <div class="skills-editor" id="skills-editor" hidden></div>
+    <p class="hint sidebar-hint">Installed skills live in your skills folder and stay there between sessions. Drop a .zip, SKILL.md or folder onto the canvas to install one, or open the folder (<span style="display:inline-block;width:11px;height:11px;vertical-align:-1px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3.5 7.5A2.5 2.5 0 0 1 6 5h4l2 2.5h6a2.5 2.5 0 0 1 2.5 2.5v7A2.5 2.5 0 0 1 18 19.5H6A2.5 2.5 0 0 1 3.5 17z"/></svg></span>) and drag a skill folder in yourself.</p>
+  </aside>
+
+  <!-- Selection bar -->
+  <div class="selbar" id="selbar" hidden>
+    <span class="selbar-text" id="selbar-text"></span>
+    <button class="btn primary" id="selbar-download" title="⇧⌘D">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>
+      <span id="selbar-label">Download</span>
+    </button>
+  </div>
+
+  <!-- Zoom controls -->
+  <div class="zoom-ctl">
+    <button id="zoom-out" title="Zoom out (−)">−</button>
+    <button id="zoom-level" title="Reset zoom (⌘0)">100%</button>
+    <button id="zoom-in" title="Zoom in (+)">+</button>
+    <span class="zoom-sep"></span>
+    <button id="zoom-fit" title="Fit to view (⇧1)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>
+    </button>
+  </div>
+
+  <!-- Empty state -->
+  <div class="empty" id="empty" hidden>
+    <div class="empty-inner">
+      <div class="empty-title">ℓ &nbsp;A blank board.</div>
+      <div class="empty-sub">Add a node from the dock, drop images or video onto the canvas, or press <kbd>⌘K</kbd>.</div>
+    </div>
+  </div>
+
+  <!-- Quick add -->
+  <div class="quickadd" id="quickadd" hidden>
+    <input id="quickadd-input" placeholder="Add a node…" autocomplete="off" spellcheck="false" />
+    <div class="quickadd-list" id="quickadd-list"></div>
+  </div>
+
+  <!-- Context menu -->
+  <div class="ctx" id="ctx" hidden></div>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox" hidden>
+    <div class="lightbox-backdrop"></div>
+    <button class="lightbox-close" id="lb-close" title="Close (Esc)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+    <button class="lightbox-nav prev" id="lb-prev" title="Previous (←)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <button class="lightbox-nav next" id="lb-next" title="Next (→)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+    </button>
+    <div class="lightbox-stage" id="lb-stage"></div>
+    <div class="lightbox-bar">
+      <div class="lightbox-meta" id="lb-meta"></div>
+      <div class="lightbox-actions">
+        <button id="lb-import" class="btn primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          Import to board
+        </button>
+        <button id="lb-download" class="btn">Download</button>
+        <button id="lb-open" class="btn">Open original</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Guide modal (section help) -->
+  <div class="guide" id="guide" hidden>
+    <div class="guide-backdrop" data-close></div>
+    <div class="guide-panel" role="dialog" aria-modal="true">
+      <div class="guide-head">
+        <h2 id="guide-title">Section</h2>
+        <button class="icon-btn" data-close title="Close (Esc)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+      <div class="guide-body" id="guide-body"></div>
+    </div>
+  </div>
+
+  <!-- Settings sheet -->
+  <div class="sheet" id="settings" hidden>
+    <div class="sheet-backdrop" data-close></div>
+    <div class="sheet-panel">
+      <div class="sheet-head">
+        <h2>Settings</h2>
+        <button class="icon-btn" data-close title="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+
+      <section>
+        <h3>Connections</h3>
+        <p class="hint" style="margin:0 0 12px">Add a key for each service you want to use. Keys are saved only in a file next to the app on this computer; the local server uses them to talk to each provider directly.</p>
+        <div id="providers" class="providers"></div>
+        <div class="row-btns"><button class="btn" id="btn-refresh-models">Refresh models</button></div>
+      </section>
+
+      <section>
+        <h3>Projects folder</h3>
+        <div class="key-form" style="margin-top:0">
+          <label class="field"><span>Folder</span><input id="projects-root" type="text" placeholder="~/Documents/Lepton Projects" spellcheck="false" /></label>
+          <div class="key-form-foot"><button class="btn" id="projects-root-btn">Use this folder</button></div>
+        </div>
+        <p class="hint">Where new projects are created and which folder the Projects sidebar lists. Projects elsewhere can still be opened by path.</p>
+      </section>
+
+      <section>
+        <h3>Skills folder</h3>
+        <div class="key-form" style="margin-top:0">
+          <label class="field"><span>Folder</span><input id="skills-root" type="text" placeholder="~/Documents/Lepton Skills" spellcheck="false" /></label>
+          <div class="key-form-foot"><button class="btn" id="skills-root-btn">Use this folder</button><button class="btn" id="skills-root-reveal">Show in Finder</button></div>
+        </div>
+        <p class="hint">One folder per installed skill, shared by every project. Skills are plain files, so you can edit them with any editor or copy them to another computer.</p>
+      </section>
+
+      <section>
+        <h3>Board</h3>
+        <div class="row-btns">
+          <button class="btn" id="btn-export">Export JSON</button>
+          <button class="btn" id="btn-import-board">Import JSON</button>
+          <button class="btn danger" id="btn-clear">Clear board</button>
+          <input type="file" id="board-file" accept="application/json" hidden />
+        </div>
+        <div class="confirm" id="clear-confirm" hidden>
+          <span>Clear the whole board? This cannot be undone.</span>
+          <button class="btn danger" id="btn-clear-yes">Clear</button>
+          <button class="btn" id="btn-clear-no">Keep</button>
+        </div>
+        <p class="hint">The board autosaves in this browser. Uploaded files live in the <code>uploads</code> folder next to the app. Nothing else is stored.</p>
+      </section>
+
+      <section>
+        <h3>Shortcuts</h3>
+        <div class="keys">
+          <div><kbd>⌘K</kbd> Quick add</div>
+          <div><kbd>P</kbd> <kbd>I</kbd> <kbd>V</kbd> <kbd>L</kbd> <kbd>B</kbd> <kbd>O</kbd> <kbd>C</kbd> Add node</div>
+          <div><kbd>⌘⏎</kbd> Run board</div>
+          <div><kbd>⏎</kbd> Run selected node</div>
+          <div><kbd>⌘C</kbd> <kbd>⌘X</kbd> <kbd>⌘V</kbd> Copy, cut, paste</div>
+          <div><kbd>⇧⌘V</kbd> Paste with connections</div>
+          <div><kbd>⌘Z</kbd> <kbd>⇧⌘Z</kbd> Undo / redo a move or resize</div>
+          <div><kbd>⌘D</kbd> Duplicate</div>
+          <div><kbd>⌘</kbd> or <kbd>⌥</kbd> + drag Duplicate a node</div>
+          <div><kbd>←</kbd> <kbd>↑</kbd> <kbd>→</kbd> <kbd>↓</kbd> Nudge (<kbd>⇧</kbd> for bigger steps)</div>
+          <div><kbd>⇧⌘D</kbd> Download selection</div>
+          <div><kbd>⌘S</kbd> Save project</div>
+          <div><kbd>⇧⌘S</kbd> Save as…</div>
+          <div><kbd>⌘O</kbd> Projects sidebar</div>
+          <div><kbd>⌘G</kbd> Group selection</div>
+          <div><kbd>⇧⌘G</kbd> Ungroup</div>
+          <div><kbd>G</kbd> Groups sidebar</div>
+          <div><kbd>⇧S</kbd> Skills sidebar</div>
+          <div><kbd>⌫</kbd> Delete</div>
+          <div><kbd>Space</kbd> + drag Pan</div>
+          <div><kbd>⌘</kbd> + scroll Zoom</div>
+          <div><kbd>⇧1</kbd> Fit to view</div>
+          <div><kbd>⌘0</kbd> Reset zoom</div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="toasts" id="toasts"></div>
+
+  <script type="module" src="/js/main.js"></script>
+</body>
+</html>

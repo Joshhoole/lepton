@@ -1,0 +1,12 @@
+{
+  "name": "lepton",
+  "version": "0.5.0",
+  "private": true,
+  "description": "Lepton: a local node-based canvas for AI image, video and text generation with your own API keys.",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
