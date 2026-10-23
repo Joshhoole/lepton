@@ -101,11 +101,10 @@ Open Settings (gear, top right). Each provider has its own card; add a key for t
 | Higgsfield | https://console.higgsfield.ai (Key ID + Secret) | Seedance, Kling, Wan, Soul, Grok Imagine, LTX, MiniMax, PixVerse and the rest of the Higgsfield catalogue |
 | Kie.ai | https://kie.ai/api-key | One key for many models: Nano Banana Pro / 2, Seedream 4.5 / 5, GPT Image 2, Flux 2, Seedance 2 / 2.5, Kling 3.0, Grok Imagine, Wan 2.7, Hailuo 2.3 and Topaz image / video upscaling. Extra model ids from docs.kie.ai can be added in Settings |
 | fal.ai | https://fal.ai/dashboard/keys | Nano Banana, Flux, Seedream, Veo 3.1, Kling 3, Seedance, Hailuo, Wan, LTX and Topaz upscaling, with controls read from fal's own model descriptions. Any other model id from fal.ai/models can be added in Settings |
-| ByteDance | https://console.byteplus.com/ark (or the Volcengine Ark console in China) | Seedance video and Seedream image models called directly. Set Region to `cn` for Volcengine; paste the dated model ids from your console in the Models field if they differ from the defaults |
 
 Keys are checked against the provider before being saved to `.lepton.json` next to the app (owner-only permissions,
 git-ignored). The page never sees a key; the local server adds it to each request. Keys can also be supplied by
-environment variable: `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `OPENAI_API_KEY`, `HF_KEY`, `ARK_API_KEY`, `KIE_API_KEY`, `FAL_KEY`.
+environment variable: `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `OPENAI_API_KEY`, `HF_KEY`, `KIE_API_KEY`, `FAL_KEY`.
 
 Model lists come live from each provider, so new models appear as soon as the provider publishes them. Every model
 picker groups models by provider. Adding another provider means adding one file in `providers/`.
@@ -291,7 +290,7 @@ results that finished while it was down (provider-side jobs) or already finished
 
 ```
 server.js              zero-dependency local server: routes, job registry, projects, skills, zip download
-providers/             one module per provider (anthropic, google, openai, higgsfield, kie, fal, bytedance) plus common.js helpers
+providers/             one module per provider (anthropic, google, openai, higgsfield, kie, fal) plus common.js helpers
 public/index.html      app shell
 public/styles.css      theme
 public/js/             state, canvas, nodes, groups, projects, mentions, compare, clipboard, skills, history, textbox,
