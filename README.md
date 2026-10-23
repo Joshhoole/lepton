@@ -160,40 +160,6 @@ Presets are plain Markdown files in `presets/`. Each has a short header (title, 
 instruction) and the system prompt as its body; see `presets/README.md`. Files are read when the sidebar opens, so adding
 or editing one needs no restart. The first preset, `environment-sheet.md`, writes hard-anchored environment prompts.
 
-## Template nodes
-
-Template nodes are prompt compilers built from a JSON file in `templates/`: one input per section of your prompt
-template, with a short description under each saying what it is, what to connect and whether it is optional. Connect
-reference images and notes to the sections you have, leave the rest empty, pick a text model and press Compile. The
-model analyses each reference and uses only what you supplied: sections you leave empty are not sent and do not appear
-in the prompt, and what you write is kept as written rather than embellished. Each section has an info button that opens
-a plain-text guide with grouped suggestions for what to put there. Images are referred to as @Image 1, @Image 2… in the order
-listed; connect the same images to the Video node's references in that order. The first template, Scene Builder,
-follows the CINEDANCE V4 director system (`templates/cinedance-v4.md`, editable) under a strict rule: story content is
-never invented, only technical control (first-frame lock, gaze and landmark locks, lens by content type, physics and
-lighting locks) is derived from what you supplied. See `templates/README.md` to add more.
-
-## Storyboard
-
-A storyboard is one large node (dock, `S`, or ⌘K) that holds the plan for a film: scenes stacked top to bottom, each
-with its shots left to right. Nothing generates inside it; it is where you work the idea out and keep track.
-
-- **Scenes** have a title and a description. Drag a scene by its header to reorder. The header shows how many of its
-  shots are done.
-- **Shots** have a title, a description (action, framing, camera), a dialogue line and a status pill that cycles
-  Concept → Working on → Done. Drag a shot along its row or into another scene; everything slides into place.
-  Shots are numbered `1.1`, `1.2`… and renumber as you move them.
-- **Result in, Brief out.** Each shot card has two ports. Connect an Image, Video or Media node to the **Result**
-  port on the left and the card's frame shows that node's current result, so swapping in a new take is just
-  reconnecting (or drop a file straight onto the frame). The **Brief** port on the right carries the scene and shot
-  text as a prompt: wire it into an LLM or straight into an Image node to start generating from the plan.
-- **Link nodes.** The link button on a shot ties it to a group of working nodes on the canvas (pick an existing group
-  or make one from the current selection). Click it later to glide to that group.
-- **Start from what you have.** Right-click a selection of Image, Video or Media nodes for "New storyboard from…" or
-  "Add … to Storyboard": each becomes a shot with its result in the frame and its prompt as the description.
-- The summary bar shows scenes, shots and progress; the node menu has "Copy outline as text" (Markdown). Deleting a
-  storyboard with content asks first. Dropped files are copied into project folders on save, like any other media.
-
 ## Skills
 
 A skill is a folder with a `SKILL.md` file (a name and description at the top, the instructions and knowledge below)
