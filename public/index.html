@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>Lepton</title>
+  <link rel="icon" type="image/png" href="/favicon.png" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <!-- Canvas -->
+  <div id="viewport" class="viewport" tabindex="0">
+    <div class="grid" id="grid"></div>
+    <div id="world" class="world">
+      <div id="groups" class="groups"></div>
+      <svg id="edges" class="edges" xmlns="http://www.w3.org/2000/svg">
+        <g id="edge-layer"></g>
+        <path id="edge-draft" class="edge draft" d="" />
+      </svg>
+      <div id="nodes" class="nodes"></div>
+      <!-- Pen drawings and the scissors' line: the top sheet, over the nodes. It never takes the pointer. -->
+      <svg id="ink" class="edges ink" xmlns="http://www.w3.org/2000/svg">
+        <g id="ink-layer"></g>
+        <path id="ink-live" d="" />
+        <path id="cut-line" d="" />
+      </svg>
+    </div>
+    <div id="marquee" class="marquee" hidden></div>
+    <div id="snap-guides" class="snap-guides"></div>
+    <div id="drop-hint" class="drop-hint" hidden><div class="drop-hint-inner">Drop to add to the board</div></div>
+  </div>
+
+  <!-- Top bar -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"><img src="/logo.png" alt="" draggable="false" /></span>
+      <span class="brand-name">Lepton</span>
+      <span class="brand-sub" id="board-name" spellcheck="false" title="Double-click to rename">Untitled board</span>
+      <span class="proj-dot" id="proj-dot" hidden></span>
+    </div>
+    <div class="topbar-right">
+      <button class="pill" id="status-pill" title="Connection">
+        <span class="dot" id="status-dot"></span>
+        <span id="status-text">Connecting…</span>
+      </button>
+      <button class="icon-btn" id="btn-settings" title="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Dock -->
+  <nav class="dock" id="dock">
+    <button class="dock-btn" data-tool="select" title="Select (Esc)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l12 7.2-5.2 1.4L10 18z"/></svg>
+      <span>Select</span>
+    </button>
+    <button class="dock-btn" data-tool="cut" title="Scissors: cut strands (X)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="6.5" cy="7" r="2.6"/><circle cx="6.5" cy="17" r="2.6"/><path d="M8.6 8.6 20 18M8.6 15.4 20 6"/></svg>
+      <span>Scissors</span>
+    </button>
+    <button class="dock-btn" data-tool="pen" title="Pen: draw on the canvas (D)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1-4.5L16.5 4a2.1 2.1 0 0 1 3 3L8 18.5z"/><path d="M14.5 6l3 3"/></svg>
+      <span>Pen</span>
+    </button>
+    <span class="dock-sep"></span>
+    <button class="dock-btn" data-add="prompt" title="Prompt (P)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M5 6h14M5 12h10M5 18h7"/></svg>
+      <span>Prompt</span>
+    </button>
+    <button class="dock-btn" data-add="image" title="Image (I)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="M20.5 15.5 15.5 11l-7 8"/></svg>
+      <span>Image</span>
+    </button>
+    <button class="dock-btn" data-add="video" title="Video (V)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6" width="12.5" height="12" rx="3"/><path d="M16 10.5 20.5 8v8L16 13.5"/></svg>
+      <span>Video</span>
+    </button>
+    <button class="dock-btn" data-add="audio" title="Audio (A)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V6l11-2v12"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>
+      <span>Audio</span>
+    </button>
+    <button class="dock-btn" data-add="llm" title="LLM (L)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>
+      <span>LLM</span>
+    </button>
+    <button class="dock-btn" data-add="batch" title="Prompt batch (B)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h5"/><path d="M9 12c3 0 3-6 6-6h5M9 12c3 0 3 6 6 6h5M9 12h11"/></svg>
+      <span>Prompt batch</span>
+    </button>
+    <button class="dock-btn" data-add="preview" title="Preview (O)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12s3.5-6.5 9.5-6.5S21.5 12 21.5 12s-3.5 6.5-9.5 6.5S2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.6"/></svg>
+      <span>Preview</span>
+    </button>
+    <button class="dock-btn" data-add="compare" title="Compare (C)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="3"/><path d="M12 2.5v19"/><path d="M8.5 10.5 6.5 12l2 1.5M15.5 10.5l2 1.5-2 1.5"/></svg>
+      <span>Compare</span>
+    </button>
+    <button class="dock-btn" data-add="linkin" title="Link in: gather references under a name (K)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12h9M9.5 8.5L13 12l-3.5 3.5"/><path d="M15 5.5h2.5a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H15"/></svg>
+      <span>Link in</span>
+    </button>
+    <button class="dock-btn" id="btn-linkout" title="Link out: use a link here (⇧K)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 12h9M17 8.5l3.5 3.5-3.5 3.5"/><path d="M9 5.5H6.5a3 3 0 0 0-3 3v7a3 3 0 0 0 3 3H9"/></svg>
+      <span>Link out</span>
+    </button>
+    <button class="dock-btn" id="btn-notes" title="Notes and titles (N · T)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4.5h14v10l-5 5H5z"/><path d="M19 14.5h-5v5"/><path d="M8.5 9h7M8.5 12.5h4"/></svg>
+      <span>Notes</span>
+    </button>
+    <span class="dock-sep"></span>
+    <button class="dock-btn" id="btn-upload" title="Upload media (U)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+      <span>Upload</span>
+    </button>
+    <button class="dock-btn" id="btn-projects" title="Projects (⌘O)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.5A2.5 2.5 0 0 1 6 5h4l2 2.5h6a2.5 2.5 0 0 1 2.5 2.5v7A2.5 2.5 0 0 1 18 19.5H6A2.5 2.5 0 0 1 3.5 17z"/></svg>
+      <span>Projects</span>
+    </button>
+    <button class="dock-btn" id="btn-skills" title="Skills (⇧S)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 18A2.5 2.5 0 0 1 6.5 15.5H19"/><path d="M9 7.5h6M9 11h4"/></svg>
+      <span>Skills</span>
+    </button>
+    <button class="dock-btn" id="btn-groups" title="Group tabs (G)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg>
+      <span>Groups</span>
+    </button>
+    <input type="file" id="file-input" multiple accept="image/*,video/*,audio/*" hidden />
+  </nav>
+
+  <!-- Group tabs: one per group, down the left edge. Click to go to a group, drag to reorder (grouptabs.js). -->
+  <nav class="group-tabs" id="group-tabs" aria-label="Groups" hidden></nav>
+
+  <!-- Projects sidebar -->
+  <aside class="sidebar" id="projects-panel" hidden>
+    <div class="sidebar-head">
+      <h2>Projects</h2>
+      <button class="icon-btn" id="projects-close" title="Close (Esc)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="sidebar-list" id="projects-list"></div>
+    <p class="hint sidebar-hint">A project is a folder with <code>project.json</code> and a <code>media</code> folder holding every file the board uses. Copy, back up or share the folder freely.</p>
+  </aside>
+
+  <!-- Skills sidebar -->
+  <aside class="sidebar" id="skills-panel" hidden>
+    <div class="sidebar-head">
+      <h2>Skills</h2>
+      <button class="icon-btn" id="skills-close" title="Close (Esc)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="skills-tools" id="skills-tools"></div>
+    <div class="sidebar-list" id="skills-list"></div>
+    <div class="skills-editor" id="skills-editor" hidden></div>
+    <p class="hint sidebar-hint">Installed skills live in your skills folder and stay there between sessions. Drop a .skill or .zip file, a SKILL.md or a folder onto the canvas to install one, or open the folder (<span style="display:inline-block;width:11px;height:11px;vertical-align:-1px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3.5 7.5A2.5 2.5 0 0 1 6 5h4l2 2.5h6a2.5 2.5 0 0 1 2.5 2.5v7A2.5 2.5 0 0 1 18 19.5H6A2.5 2.5 0 0 1 3.5 17z"/></svg></span>) and drag a skill folder in yourself.</p>
+  </aside>
+
+  <!-- In-app question -->
+  <div class="dialog" id="dialog" hidden>
+    <div class="dialog-backdrop"></div>
+    <div class="dialog-panel" role="dialog" aria-modal="true">
+      <h3 id="dialog-title"></h3>
+      <p id="dialog-message"></p>
+      <div class="dialog-buttons" id="dialog-buttons"></div>
+    </div>
+  </div>
+
+  <!-- Options for the active canvas tool (pen colours, eraser, …) -->
+  <div class="tool-options" id="tool-options" hidden></div>
+
+  <!-- Selection bar -->
+  <div class="selbar" id="selbar" hidden>
+    <span class="selbar-text" id="selbar-text"></span>
+    <button class="btn primary" id="selbar-download" title="⇧⌘D">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>
+      <span id="selbar-label">Download</span>
+    </button>
+    <button class="btn" id="selbar-tidy" title="Straighten the selected nodes into rows and columns, keeping their places (⌘Z undoes it)">Tidy up</button>
+  </div>
+
+  <!-- Zoom controls -->
+  <div class="zoom-ctl">
+    <button id="zoom-out" title="Zoom out (−)">−</button>
+    <button id="zoom-level" title="Reset zoom (⌘0)">100%</button>
+    <button id="zoom-in" title="Zoom in (+)">+</button>
+    <span class="zoom-sep"></span>
+    <button id="zoom-fit" title="Fit to view (⇧1)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>
+    </button>
+    <span class="zoom-sep"></span>
+    <button id="snap-grid" title="Snap to grid (⇧G)" aria-pressed="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4v8a6 6 0 0 0 12 0V4h-4v8a2 2 0 0 1-4 0V4z"/><path d="M6 8h4M14 8h4"/></svg>
+    </button>
+  </div>
+
+  <!-- Empty state -->
+  <div class="empty" id="empty" hidden>
+    <div class="empty-inner">
+      <div class="empty-title">ℓ &nbsp;A blank board.</div>
+      <div class="empty-sub">Add a node from the dock, drop images or video onto the canvas, or press <kbd>⇧A</kbd> to add one where your pointer is.</div>
+    </div>
+  </div>
+
+  <!-- Quick add -->
+  <div class="quickadd" id="quickadd" hidden>
+    <input id="quickadd-input" placeholder="Search, or pick a category…" autocomplete="off" spellcheck="false" />
+    <div class="quickadd-list" id="quickadd-list"></div>
+  </div>
+  <div class="quickadd-sub" id="quickadd-sub" hidden></div>
+
+  <!-- Context menu -->
+  <div class="ctx" id="ctx" hidden></div>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox" hidden>
+    <div class="lightbox-backdrop"></div>
+    <button class="lightbox-close" id="lb-close" title="Close (Esc)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+    <button class="lightbox-nav prev" id="lb-prev" title="Previous (←)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <button class="lightbox-nav next" id="lb-next" title="Next (→)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+    </button>
+    <div class="lightbox-stage" id="lb-stage"></div>
+    <div class="lightbox-bar">
+      <div class="lightbox-meta" id="lb-meta"></div>
+      <div class="lightbox-actions">
+        <button id="lb-import" class="btn primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          Import to board
+        </button>
+        <button id="lb-crop" class="btn" title="Crop this image">Crop</button>
+        <button id="lb-markup" class="btn" title="Draw on this image and add the result to the board">Draw on it</button>
+        <button id="lb-reveal" class="btn" title="Show the saved file in your file manager">Show in folder</button>
+        <button id="lb-download" class="btn">Download</button>
+        <button id="lb-open" class="btn">Open original</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Guide modal (section help) -->
+  <div class="guide" id="guide" hidden>
+    <div class="guide-backdrop" data-close></div>
+    <div class="guide-panel" role="dialog" aria-modal="true">
+      <div class="guide-head">
+        <h2 id="guide-title">Section</h2>
+        <button class="icon-btn" data-close title="Close (Esc)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+      <div class="guide-body" id="guide-body"></div>
+    </div>
+  </div>
+
+  <!-- Settings sheet -->
+  <div class="sheet" id="settings" hidden>
+    <div class="sheet-backdrop" data-close></div>
+    <div class="sheet-panel">
+      <div class="sheet-head">
+        <h2>Settings</h2>
+        <button class="icon-btn" data-close title="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+
+      <section>
+        <h3>Connections</h3>
+        <p class="hint" style="margin:0 0 12px">Add a key for each service you want to use. Keys are saved only in a file next to the app on this computer; the local server uses them to talk to each provider directly.</p>
+        <div id="providers" class="providers"></div>
+        <div class="row-btns"><button class="btn" id="btn-refresh-models">Refresh models</button></div>
+      </section>
+
+      <section>
+        <h3>Projects folder</h3>
+        <div class="key-form" style="margin-top:0">
+          <label class="field"><span>Folder</span><input id="projects-root" type="text" placeholder="~/Documents/Lepton Projects" spellcheck="false" /></label>
+          <div class="key-form-foot"><button class="btn" id="projects-root-btn">Use this folder</button></div>
+        </div>
+        <p class="hint">Where new projects are created and which folder the Projects sidebar lists. Projects elsewhere can still be opened by path.</p>
+      </section>
+
+      <section>
+        <h3>Skills folder</h3>
+        <div class="key-form" style="margin-top:0">
+          <label class="field"><span>Folder</span><input id="skills-root" type="text" placeholder="~/Documents/Lepton Skills" spellcheck="false" /></label>
+          <div class="key-form-foot"><button class="btn" id="skills-root-btn">Use this folder</button><button class="btn" id="skills-root-reveal">Show in Finder</button></div>
+        </div>
+        <p class="hint">One folder per installed skill, shared by every project. Skills are plain files, so you can edit them with any editor or copy them to another computer.</p>
+      </section>
+
+      <section>
+        <h3>Storage</h3>
+        <div class="row-btns" style="margin-top:0"><button class="btn" id="btn-storage">Manage storage…</button></div>
+        <p class="hint">See what takes up space, clear temporary files, trim history, choose the image format and archive finished projects.</p>
+      </section>
+
+      <section>
+        <h3>Hints</h3>
+        <div class="setting-row">
+          <span>Explain buttons and settings when the pointer rests on them</span>
+          <button class="switch" id="hints-switch" role="switch" aria-checked="true" aria-label="Hints"></button>
+        </div>
+      </section>
+
+      <section>
+        <h3>Board</h3>
+        <div class="row-btns">
+          <button class="btn" id="btn-export">Export JSON</button>
+          <button class="btn" id="btn-import-board">Import JSON</button>
+          <button class="btn danger" id="btn-clear">Clear board</button>
+          <input type="file" id="board-file" accept="application/json" hidden />
+        </div>
+        <div class="confirm" id="clear-confirm" hidden>
+          <span>Clear the whole board? This cannot be undone.</span>
+          <button class="btn danger" id="btn-clear-yes">Clear</button>
+          <button class="btn" id="btn-clear-no">Keep</button>
+        </div>
+        <p class="hint">The board autosaves in this browser. Files you drop in and new results wait in the <code>uploads</code> folder next to the app until a project is saved, which gives the project its own copy.</p>
+      </section>
+
+      <section>
+        <h3>Shortcuts</h3>
+        <div class="keys">
+          <div><kbd>⇧A</kbd> Quick add at the pointer</div>
+          <div><kbd>P</kbd> <kbd>I</kbd> <kbd>V</kbd> <kbd>A</kbd> <kbd>L</kbd> <kbd>B</kbd> <kbd>O</kbd> <kbd>C</kbd> Add node</div>
+          <div><kbd>N</kbd> Note · <kbd>T</kbd> Title, at the pointer</div>
+          <div><kbd>X</kbd> Scissors · <kbd>D</kbd> Pen · <kbd>Esc</kbd> Select</div>
+          <div><kbd>⏎</kbd> Run selected node</div>
+          <div><kbd>⌘C</kbd> <kbd>⌘X</kbd> <kbd>⌘V</kbd> Copy, cut, paste</div>
+          <div><kbd>⇧⌘V</kbd> Paste with connections</div>
+          <div><kbd>⌘Z</kbd> <kbd>⇧⌘Z</kbd> Undo / redo anything you did</div>
+          <div><kbd>⌘D</kbd> Duplicate</div>
+          <div><kbd>⌘</kbd> or <kbd>⌥</kbd> + drag Duplicate a node</div>
+          <div><kbd>←</kbd> <kbd>↑</kbd> <kbd>→</kbd> <kbd>↓</kbd> Nudge (<kbd>⇧</kbd> for bigger steps)</div>
+          <div><kbd>⇧⌘D</kbd> Download selection</div>
+          <div><kbd>⌘S</kbd> Save project</div>
+          <div><kbd>⇧⌘S</kbd> Save as…</div>
+          <div><kbd>⌘O</kbd> Projects sidebar</div>
+          <div><kbd>⌘G</kbd> Group selection</div>
+          <div><kbd>⇧⌘G</kbd> Ungroup</div>
+          <div><kbd>J</kbd> Combine prompts into one</div>
+          <div><kbd>K</kbd> Link in · <kbd>⇧K</kbd> Link out</div>
+          <div><kbd>G</kbd> Show or hide group tabs</div>
+          <div><kbd>⇧G</kbd> Snap to grid on / off</div>
+          <div><kbd>⇧</kbd> + drag Move without snapping</div>
+          <div><kbd>⇧S</kbd> Skills sidebar</div>
+          <div><kbd>⌫</kbd> Delete</div>
+          <div><kbd>Space</kbd> + drag Pan</div>
+          <div><kbd>⌘</kbd> + scroll Zoom</div>
+          <div><kbd>⇧1</kbd> Fit to view</div>
+          <div><kbd>⌘0</kbd> Reset zoom</div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Storage sheet -->
+  <div class="sheet" id="storage" hidden>
+    <div class="sheet-backdrop" data-close></div>
+    <div class="sheet-panel storage-panel">
+      <div class="sheet-head">
+        <h2>Storage</h2>
+        <button class="icon-btn" data-close title="Close (Esc)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+      <div id="storage-body"></div>
+    </div>
+  </div>
+
+  <!-- Draw on an image -->
+  <div class="markup" id="markup" hidden>
+    <div class="markup-stage"><canvas id="markup-canvas"></canvas></div>
+    <div class="markup-bar">
+      <div class="segmented markup-seg">
+        <button type="button" data-tool="pen" title="Pen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1-4.5L16.5 4a2.1 2.1 0 0 1 3 3L8 18.5z"/><path d="M14.5 6l3 3"/></svg><span>Pen</span></button>
+        <button type="button" data-tool="arrow" title="Arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19 19 5M10 5h9v9"/></svg><span>Arrow</span></button>
+      </div>
+      <div class="markup-colors" id="markup-colors"></div>
+      <div class="segmented markup-seg markup-sizes">
+        <button type="button" data-size="s" title="Thin"><i style="width:4px;height:4px"></i></button>
+        <button type="button" data-size="m" title="Medium"><i style="width:7px;height:7px"></i></button>
+        <button type="button" data-size="l" title="Thick"><i style="width:11px;height:11px"></i></button>
+      </div>
+      <span class="markup-gap"></span>
+      <button class="btn" id="markup-undo" title="⌘Z">Undo</button>
+      <button class="btn" id="markup-clear">Clear</button>
+      <button class="btn" id="markup-cancel" title="Esc">Cancel</button>
+      <button class="btn primary" id="markup-save" title="⌘⏎">Add to board</button>
+    </div>
+  </div>
+
+  <!-- Crop an image (crop.js) -->
+  <div class="crop" id="crop" hidden>
+    <div class="crop-stage" id="crop-stage">
+      <div class="crop-frame" id="crop-frame">
+        <canvas id="crop-canvas"></canvas>
+        <div class="crop-clip"><div class="crop-shade" id="crop-shade"></div></div>
+        <div class="crop-box" id="crop-box">
+          <i class="crop-third v1"></i><i class="crop-third v2"></i><i class="crop-third h1"></i><i class="crop-third h2"></i>
+          <span class="crop-handle nw" data-h="nw"></span><span class="crop-handle n" data-h="n"></span><span class="crop-handle ne" data-h="ne"></span>
+          <span class="crop-handle w" data-h="w"></span><span class="crop-handle e" data-h="e"></span>
+          <span class="crop-handle sw" data-h="sw"></span><span class="crop-handle s" data-h="s"></span><span class="crop-handle se" data-h="se"></span>
+        </div>
+      </div>
+    </div>
+    <div class="crop-bar">
+      <div class="select-wrap crop-ratio" title="Hold the frame to a shape"><select id="crop-ratio"></select></div>
+      <div class="segmented markup-seg">
+        <button type="button" id="crop-left" title="Turn a quarter to the left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9a8 8 0 1 1 1.5 7.5"/><path d="M4 4v5h5"/></svg></button>
+        <button type="button" id="crop-right" title="Turn a quarter to the right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 9a8 8 0 1 0-1.5 7.5"/><path d="M20 4v5h-5"/></svg></button>
+        <button type="button" id="crop-flip" title="Flip left to right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M8.5 7 4 12l4.5 5z"/><path d="M15.5 7 20 12l-4.5 5z" stroke-dasharray="2.5 2.5"/></svg></button>
+      </div>
+      <span class="crop-size" id="crop-size"></span>
+      <span class="markup-gap"></span>
+      <button class="btn" id="crop-reset" title="Back to the whole picture">Reset</button>
+      <button class="btn" id="crop-cancel" title="Esc">Cancel</button>
+      <button class="btn" id="crop-replace" title="Swap this Media node's picture for the crop. The original can be brought back from the node's menu.">Replace</button>
+      <button class="btn primary" id="crop-save" title="Add the crop as a new image beside the original (⏎)">Add to board</button>
+    </div>
+  </div>
+
+  <!-- The large editor: one text box from a node, opened big -->
+  <div class="editor" id="editor" hidden>
+    <div class="editor-card" role="dialog" aria-modal="true" aria-labelledby="editor-title">
+      <div class="editor-head">
+        <div class="editor-titles"><h2 id="editor-title">Prompt</h2><span id="editor-sub"></span></div>
+        <button class="icon-btn" id="editor-close" title="Done (Esc)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+      <div class="editor-body" id="editor-slot"></div>
+      <div class="editor-foot">
+        <span class="editor-count" id="editor-count"></span>
+        <span class="editor-gap"></span>
+        <button class="btn" id="editor-revert" title="Put back the text as it was when you opened the editor">Revert</button>
+        <button class="btn" id="editor-copy">Copy</button>
+        <button class="btn primary" id="editor-done" title="Esc or ⌘⏎">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toasts" id="toasts"></div>
+
+  <script type="module" src="/js/main.js"></script>
+</body>
+</html>
